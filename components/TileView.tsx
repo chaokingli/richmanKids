@@ -10,7 +10,7 @@ interface TileViewProps {
 
 const TileView: React.FC<TileViewProps> = ({ tile, players }) => {
   const getIcon = () => {
-    const iconClass = "w-3 h-3 sm:w-5 sm:h-5";
+    const iconClass = "w-4 h-4 sm:w-6 sm:h-6 md:w-8 md:h-8";
     switch (tile.type) {
       case TileType.START: return <MapPin className={`${iconClass} text-white`} />;
       case TileType.PROPERTY: return <Home className={`${iconClass} ${tile.owner ? 'text-white' : 'text-gray-700 opacity-50'}`} />;
@@ -25,9 +25,9 @@ const TileView: React.FC<TileViewProps> = ({ tile, players }) => {
   const renderHouses = () => {
     if (!tile.level || tile.level <= 0) return null;
     return (
-      <div className="absolute top-0.5 right-0.5 flex flex-wrap max-w-[15px] sm:max-w-none space-x-0.5">
+      <div className="absolute top-1 right-1 flex flex-wrap max-w-[20px] sm:max-w-none space-x-1">
         {Array.from({ length: tile.level }).map((_, i) => (
-          <div key={i} className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-yellow-400 rounded-full border border-black" />
+          <div key={i} className="w-2 h-2 sm:w-3 sm:h-3 md:w-4 md:h-4 bg-yellow-400 rounded-full border-2 border-black shadow-sm" />
         ))}
       </div>
     );
@@ -35,24 +35,24 @@ const TileView: React.FC<TileViewProps> = ({ tile, players }) => {
 
   const ownerPlayer = players.find(p => p.id === tile.owner);
   const borderClass = ownerPlayer 
-    ? `border-2 sm:border-4 ${ownerPlayer.id === 'p1' ? 'border-blue-500' : ownerPlayer.id === 'p2' ? 'border-red-500' : ownerPlayer.id === 'p3' ? 'border-green-500' : 'border-yellow-500'}`
-    : 'border border-gray-300 sm:border-2';
+    ? `border-2 sm:border-4 md:border-6 ${ownerPlayer.id === 'p1' ? 'border-blue-500' : ownerPlayer.id === 'p2' ? 'border-red-500' : ownerPlayer.id === 'p3' ? 'border-green-500' : 'border-yellow-500'}`
+    : 'border border-gray-300 sm:border-2 md:border-4';
 
   return (
     <div className={`
-      relative flex flex-col items-center justify-center p-0.5 sm:p-1 
-      rounded-md sm:rounded-lg shadow-sm transition-all
+      relative flex flex-col items-center justify-center p-1 sm:p-2 
+      rounded-xl sm:rounded-2xl shadow-sm transition-all
       ${tile.color} 
       ${borderClass}
       h-full w-full overflow-hidden
     `}>
       <div className="flex flex-col items-center z-0 text-center w-full">
-        <div className="mb-0.5">{getIcon()}</div>
-        <span className="text-[7px] sm:text-[10px] md:text-xs font-bold leading-none text-gray-800 bg-white/50 px-0.5 rounded backdrop-blur-sm truncate w-full">
+        <div className="mb-1">{getIcon()}</div>
+        <span className="text-[8px] sm:text-[12px] md:text-sm lg:text-base font-black leading-tight text-gray-800 bg-white/60 px-1 rounded-md backdrop-blur-sm truncate w-full shadow-sm">
           {tile.name}
         </span>
         {tile.type === TileType.PROPERTY && (
-          <span className="text-[6px] sm:text-[9px] font-mono text-gray-700 mt-0.5">
+          <span className="text-[7px] sm:text-[10px] md:text-xs lg:text-sm font-mono font-bold text-gray-700 mt-1">
             ${tile.price}
           </span>
         )}

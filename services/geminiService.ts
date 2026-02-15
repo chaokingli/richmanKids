@@ -45,7 +45,7 @@ export const generateChanceEvent = async (lang: Language): Promise<GeneratedEven
     }
     throw new Error("No response text");
   } catch (error) {
-    console.error("Gemini API Error:", error);
+    console.error("Gemini API Error (Event):", error);
     return {
       title: "Lucky!",
       description: "...",
@@ -71,6 +71,7 @@ export const generateCommentary = async (playerName: string, action: string, lan
     });
     return response.text || "Amazing!";
   } catch (e) {
+    console.error("Gemini API Error (Commentary):", e);
     return "Wow!";
   }
 };
@@ -96,8 +97,13 @@ export const generateSpeech = async (text: string, voice: string = 'Kore'): Prom
     if (base64Audio) {
       return decode(base64Audio);
     }
-  } catch (e) {
-    console.error("TTS Error:", e);
+  } catch (e: any) {
+    // Handle 429 Quota errors specifically to return quickly
+    if (e.message?.includes("429") || e.status === 429) {
+      console.warn("Gemini TTS Quota exceeded (429). Falling back.");
+    } else {
+      console.error("TTS Error:", e);
+    }
   }
   return null;
 };

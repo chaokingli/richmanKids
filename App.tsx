@@ -67,25 +67,36 @@ const App: React.FC = () => {
     if (isSoundEnabled) audioService.playSfx(type);
   };
 
-  /**
-   * 核心修改：speak 函数现在会返回一个 Promise，
-   * 只有在音频数据加载并解码完成后才会 resolve，
-   * 从而允许我们在 UI 更新前等待语音准备就绪。
-   */
   const speak = async (text: string): Promise<void> => {
-    if (!isSoundEnabled || !process.env.API_KEY) return;
+    if (!isSoundEnabled) return;
     
-    // 1. 从后台获取语音数据
-    const audioData = await generateSpeech(text);
-    if (audioData) {
-      const ctx = audioService.getAudioContext();
-      // 2. 解码音频数据
-      const buffer = await decodeAudioData(audioData, ctx);
-      const source = ctx.createBufferSource();
-      source.buffer = buffer;
-      source.connect(ctx.destination);
-      // 3. 准备播放（同步触发）
-      source.start();
+    if (process.env.API_KEY) {
+      try {
+        const audioData = await generateSpeech(text);
+        if (audioData) {
+          const ctx = audioService.getAudioContext();
+          const buffer = await decodeAudioData(audioData, ctx);
+          const source = ctx.createBufferSource();
+          source.buffer = buffer;
+          source.connect(ctx.destination);
+          source.start();
+          return;
+        }
+      } catch (e) {
+        console.warn("Gemini TTS playback failed, attempting fallback speech synthesis.", e);
+      }
+    }
+
+    if ('speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      const langMap: Record<Language, string> = {
+        zh: 'zh-CN',
+        en: 'en-US',
+        de: 'de-DE',
+        ja: 'ja-JP'
+      };
+      utterance.lang = langMap[language] || 'zh-CN';
+      window.speechSynthesis.speak(utterance);
     }
   };
 
@@ -167,8 +178,8 @@ const App: React.FC = () => {
     setPhase(GamePhase.WAITING_FOR_ROLL);
 
     const startMsg = language === 'zh' ? "游戏开始！" : "Game start!";
-    await speak(startMsg); // 等待语音加载
-    addLog(startMsg, 'success'); // 与语音同步显示
+    await speak(startMsg); 
+    addLog(startMsg, 'success'); 
   };
 
   useEffect(() => {
@@ -399,13 +410,8 @@ const App: React.FC = () => {
     addLog(`${player.name} ${t.bought} ${tile.name}!`, "success");
     playSfx('buy');
     
-    // 生成评论
     const comment = await generateCommentary(player.name, "bought " + tile.name, language, price);
-    
-    // 关键：先加载语音
     await speak(comment);
-    
-    // 语音加载并开始播放的同时，显示文字日志
     addLog(`🎙️ ${comment}`, "event");
     
     setTimeout(nextTurn, 1500);
@@ -428,7 +434,6 @@ const App: React.FC = () => {
     setTimeout(async () => {
         const freshPayer = players.find(p => p.id === payer.id);
         if (freshPayer && freshPayer.money < 0) {
-            // 游戏结束同步
             await speak(t.gameover);
             setModalConfig({
               isOpen: true,
@@ -449,13 +454,9 @@ const App: React.FC = () => {
     setPhase(GamePhase.EVENT_PROCESSING);
     addLog(t.modals.chanceTitle, "event");
     
-    // 1. 生成事件
     const event = await generateChanceEvent(language);
-    
-    // 2. 关键：等待语音数据从后台加载并解码
     await speak(event.description);
     
-    // 3. 语音准备就绪后，同时弹出对话框
     setModalConfig({
       isOpen: true,
       title: event.title,
@@ -498,20 +499,20 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-sky-100 flex flex-col items-center font-sans">
-      <div className="w-full bg-white/80 backdrop-blur-sm border-b-2 border-black/10 py-2 px-4 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar app-header z-50">
+    <div className="min-h-screen bg-sky-100 flex flex-col items-center font-sans overflow-y-auto">
+      <div className="w-full bg-white/80 backdrop-blur-sm border-b-2 border-black/10 py-2 px-4 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar app-header z-50 sticky top-0">
         <div className="flex gap-2">
            {players.map((p) => (
              <div key={p.id} className={`flex items-center gap-1 sm:gap-2 px-2 py-1 rounded-full border border-black/20 transition-all ${p.id === currentPlayer?.id ? 'bg-white ring-2 ring-indigo-400 shadow-md scale-105' : 'bg-gray-100 opacity-80'} flex-shrink-0`}>
                 <span className="text-sm sm:text-base">{p.avatar}</span>
                 <div className="flex flex-col leading-none">
-                  <span className="text-[9px] font-bold max-w-[40px] truncate">{p.name}</span>
-                  <span className="text-[10px] font-mono text-green-600 font-bold">${p.money}</span>
+                  <span className="text-[9px] sm:text-[11px] font-bold max-w-[60px] truncate">{p.name}</span>
+                  <span className="text-[10px] sm:text-[12px] font-mono text-green-600 font-bold">${p.money}</span>
                 </div>
                 {p.abilityCharges > -1 && (
                   <div className="flex items-center ml-0.5">
-                    <Zap size={8} className={p.abilityCharges > 0 ? "text-yellow-500 fill-yellow-500" : "text-gray-400"} />
-                    <span className="text-[8px] font-bold text-gray-600">{p.abilityCharges}</span>
+                    <Zap size={10} className={p.abilityCharges > 0 ? "text-yellow-500 fill-yellow-500" : "text-gray-400"} />
+                    <span className="text-[10px] font-bold text-gray-600">{p.abilityCharges}</span>
                   </div>
                 )}
              </div>
@@ -522,33 +523,33 @@ const App: React.FC = () => {
             onClick={() => setIsSoundEnabled(!isSoundEnabled)} 
             className={`p-2 rounded-full border transition-all ${isSoundEnabled ? 'bg-green-100 text-green-700 border-green-300' : 'bg-red-100 text-red-700 border-red-300'}`}
           >
-            {isSoundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+            {isSoundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
           </button>
-          <button onClick={() => setLanguage(l => l === 'de' ? 'en' : l === 'en' ? 'zh' : l === 'zh' ? 'ja' : 'de')} className="bg-indigo-50 text-indigo-700 px-2 py-1 rounded-full text-xs font-bold border border-indigo-200">
+          <button onClick={() => setLanguage(l => l === 'de' ? 'en' : l === 'en' ? 'zh' : l === 'zh' ? 'ja' : 'de')} className="bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-full text-xs sm:text-sm font-bold border border-indigo-200">
              {language.toUpperCase()}
           </button>
         </div>
       </div>
 
-      <main className="w-full max-w-[500px] flex-grow flex flex-col items-center justify-center p-2 sm:p-4">
-        <div className="relative w-full board-container bg-white rounded-2xl border-2 sm:border-4 border-black p-1 sm:p-2 pop-shadow-lg overflow-hidden">
-          <div className="w-full h-full grid grid-cols-6 grid-rows-6 gap-0.5 sm:gap-1">
+      <main className="w-full max-w-[min(95vw,85vh)] flex-grow flex flex-col items-center justify-center p-2 sm:p-6">
+        <div className="relative w-full board-container bg-white rounded-3xl border-4 sm:border-8 border-black p-1.5 sm:p-4 pop-shadow-lg overflow-hidden">
+          <div className="w-full h-full grid grid-cols-6 grid-rows-6 gap-1 sm:gap-2 md:gap-3">
              {board.map((tile) => (
                <div key={tile.id} style={getGridStyle(tile.id)} className="w-full h-full">
                  <TileView tile={tile} players={players} />
                </div>
              ))}
              
-             <div className="col-start-2 col-end-6 row-start-2 row-end-6 bg-sky-50 rounded-xl border border-dashed border-sky-200 flex flex-col items-center justify-center relative p-2">
+             <div className="col-start-2 col-end-6 row-start-2 row-end-6 bg-sky-50 rounded-2xl border-2 border-dashed border-sky-200 flex flex-col items-center justify-center relative p-3 sm:p-6">
                 
-                <div className={`absolute inset-0 z-40 transition-all duration-300 bg-sky-50/95 p-2 flex flex-col ${showLogs ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-                   <div className="flex justify-between items-center mb-1">
-                     <span className="text-xs font-bold text-indigo-600 flex items-center gap-1"><ScrollText size={12}/> 日志</span>
-                     <button onClick={() => setShowLogs(false)} className="text-[10px] bg-indigo-500 text-white px-2 py-0.5 rounded">关闭</button>
+                <div className={`absolute inset-0 z-40 transition-all duration-300 bg-sky-50/95 p-3 flex flex-col rounded-2xl ${showLogs ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                   <div className="flex justify-between items-center mb-2">
+                     <span className="text-sm font-bold text-indigo-600 flex items-center gap-1"><ScrollText size={16}/> 日志</span>
+                     <button onClick={() => setShowLogs(false)} className="text-xs bg-indigo-500 text-white px-3 py-1 rounded-lg">关闭</button>
                    </div>
                    <div className="flex-grow overflow-y-auto pr-1" ref={scrollRef}>
                       {logs.map((log) => (
-                        <div key={log.id} className={`text-[9px] sm:text-xs p-1 mb-1 rounded border-l-2 ${log.type === 'danger' ? 'bg-red-50 border-red-500' : log.type === 'success' ? 'bg-green-50 border-green-500' : log.type === 'event' ? 'bg-purple-50 border-purple-500' : 'bg-gray-50 border-gray-300'}`}>
+                        <div key={log.id} className={`text-[10px] sm:text-sm p-2 mb-2 rounded-lg border-l-4 ${log.type === 'danger' ? 'bg-red-50 border-red-500' : log.type === 'success' ? 'bg-green-50 border-green-500' : log.type === 'event' ? 'bg-purple-50 border-purple-500' : 'bg-gray-50 border-gray-300'}`}>
                           {log.text}
                         </div>
                       ))}
@@ -557,28 +558,28 @@ const App: React.FC = () => {
 
                 {!showLogs && (
                   <div className="flex flex-col items-center w-full h-full">
-                    <div onClick={() => setShowLogs(true)} className="w-full text-center bg-white/40 hover:bg-white/60 cursor-pointer rounded-md p-1 mb-auto border border-black/5 overflow-hidden">
-                       <p className="text-[9px] text-gray-500 truncate">{logs.length > 0 ? logs[logs.length-1].text : '等待开始...'}</p>
+                    <div onClick={() => setShowLogs(true)} className="w-full text-center bg-white/50 hover:bg-white/80 cursor-pointer rounded-xl p-2 mb-auto border border-black/5 overflow-hidden transition-colors">
+                       <p className="text-xs sm:text-sm text-gray-500 truncate">{logs.length > 0 ? logs[logs.length-1].text : '等待开始...'}</p>
                     </div>
 
-                    <div className="mt-auto mb-auto flex flex-col items-center gap-1 sm:gap-3 w-full">
-                      <div className={`text-base sm:text-xl font-black ${currentPlayer?.color.replace('bg-', 'text-')} leading-tight text-center truncate w-full`}>
+                    <div className="mt-auto mb-auto flex flex-col items-center gap-2 sm:gap-6 w-full">
+                      <div className={`text-xl sm:text-3xl font-black ${currentPlayer?.color.replace('bg-', 'text-')} leading-tight text-center truncate w-full drop-shadow-sm`}>
                         {currentPlayer?.name}
                       </div>
                       
-                      <div className="flex items-center justify-center gap-3 sm:gap-6">
+                      <div className="flex items-center justify-center gap-4 sm:gap-10">
                          {phase === GamePhase.ROLL_RESULT && !currentPlayer.isAi && currentCharacter?.abilityType === 'REROLL' && currentPlayer.abilityCharges > 0 && (
-                            <button onClick={() => useAbility('REROLL')} className="flex flex-col items-center">
-                               <div className="w-10 h-10 sm:w-16 sm:h-16 bg-blue-500 rounded-full flex items-center justify-center text-white border-2 border-black pop-shadow active:scale-95 transition-all">
-                                  <Repeat size={18} />
+                            <button onClick={() => useAbility('REROLL')} className="flex flex-col items-center group">
+                               <div className="w-12 h-12 sm:w-20 sm:h-20 bg-blue-500 rounded-full flex items-center justify-center text-white border-2 sm:border-4 border-black pop-shadow active:scale-95 transition-all group-hover:bg-blue-600">
+                                  <Repeat size={24} className="sm:w-10 sm:h-10" />
                                </div>
-                               <span className="text-[8px] font-bold text-gray-500 mt-0.5">{t.reroll}</span>
+                               <span className="text-[10px] sm:text-xs font-bold text-gray-500 mt-2">{t.reroll}</span>
                             </button>
                          )}
                          
-                         <div className="scale-75 sm:scale-100">
+                         <div className="scale-90 sm:scale-125">
                             {phase === GamePhase.ROLL_RESULT ? (
-                              <div className="w-20 h-20 sm:w-24 sm:h-24 bg-white rounded-2xl border-2 sm:border-4 border-black flex items-center justify-center text-4xl sm:text-5xl font-bold text-indigo-600 shadow-inner">
+                              <div className="w-24 h-24 sm:w-28 sm:h-28 bg-white rounded-3xl border-4 border-black flex items-center justify-center text-5xl sm:text-6xl font-black text-indigo-600 shadow-inner pop-shadow">
                                 {diceValue}
                               </div>
                             ) : (
@@ -587,18 +588,18 @@ const App: React.FC = () => {
                          </div>
 
                          {phase === GamePhase.ROLL_RESULT && !currentPlayer.isAi && currentCharacter?.abilityType === 'EXTRA_STEPS' && currentPlayer.abilityCharges > 0 && (
-                            <button onClick={() => useAbility('EXTRA_STEPS')} className="flex flex-col items-center">
-                               <div className="w-10 h-10 sm:w-16 sm:h-16 bg-pink-500 rounded-full flex items-center justify-center text-white border-2 border-black pop-shadow active:scale-95 transition-all">
-                                  <FastForward size={18} />
+                            <button onClick={() => useAbility('EXTRA_STEPS')} className="flex flex-col items-center group">
+                               <div className="w-12 h-12 sm:w-20 sm:h-20 bg-pink-500 rounded-full flex items-center justify-center text-white border-2 sm:border-4 border-black pop-shadow active:scale-95 transition-all group-hover:bg-pink-600">
+                                  <FastForward size={24} className="sm:w-10 sm:h-10" />
                                </div>
-                               <span className="text-[8px] font-bold text-gray-500 mt-0.5">{t.extraSteps}</span>
+                               <span className="text-[10px] sm:text-xs font-bold text-gray-500 mt-2">{t.extraSteps}</span>
                             </button>
                          )}
                       </div>
 
                       {phase === GamePhase.ROLL_RESULT && !currentPlayer.isAi && (
-                         <button onClick={confirmMove} className="px-6 py-2 bg-green-400 text-white font-bold rounded-xl border-b-2 sm:border-b-4 border-green-600 active:border-b-0 active:translate-y-1 transition-all flex items-center gap-2 text-sm sm:text-base">
-                           <Play size={14} fill="currentColor" /> {t.move}
+                         <button onClick={confirmMove} className="px-8 py-3 sm:px-12 sm:py-4 bg-green-400 text-white font-black rounded-2xl border-b-4 sm:border-b-8 border-green-600 active:border-b-0 active:translate-y-1 transition-all flex items-center gap-3 text-lg sm:text-2xl pop-shadow">
+                           <Play size={20} fill="currentColor" className="sm:w-8 sm:h-8" /> {t.move}
                          </button>
                       )}
                     </div>
