@@ -43,6 +43,8 @@ export const TRANSLATIONS: Record<Language, any> = {
     totalPlayers: "Gesamtspieler",
     humanPlayers: "Menschliche Spieler",
     startGame: "Spiel starten",
+    soundOn: "Ton an",
+    soundOff: "Ton aus",
     characters: {
       panda: { name: "Panpan", desc: "Ein entspannter Panda, der Bambus liebt.", ability: "Glückswürfel", abilityDesc: "Würfle nochmal, wenn dir die Zahl nicht gefällt!" },
       rabbit: { name: "Bunbun", desc: "Ein hüpfender Hase mit coolen Turnschuhen.", ability: "Turboschuhe", abilityDesc: "+3 Schritte auf deinen Wurf!" },
@@ -124,6 +126,8 @@ export const TRANSLATIONS: Record<Language, any> = {
     totalPlayers: "Total Players",
     humanPlayers: "Human Players",
     startGame: "Start Game",
+    soundOn: "Sound On",
+    soundOff: "Sound Off",
     characters: {
       panda: { name: "Panpan", desc: "A relaxed panda who loves bamboo.", ability: "Lucky Dice", abilityDesc: "Reroll the dice if you don't like the number!" },
       rabbit: { name: "Bunbun", desc: "A bouncy rabbit with cool sneakers.", ability: "Turbo Shoes", abilityDesc: "Add +3 steps to your roll!" },
@@ -205,6 +209,8 @@ export const TRANSLATIONS: Record<Language, any> = {
     totalPlayers: "玩家总数",
     humanPlayers: "人类玩家",
     startGame: "开始游戏",
+    soundOn: "开启声音",
+    soundOff: "静音",
     characters: {
       panda: { name: "胖胖", desc: "一只喜欢竹子的悠闲熊猫。", ability: "幸运骰子", abilityDesc: "如果不喜欢点数，可以重掷一次！" },
       rabbit: { name: "蹦蹦", desc: "穿着酷炫跑鞋的活力小兔。", ability: "涡轮跑鞋", abilityDesc: "掷骰子点数 +3！" },
@@ -286,6 +292,8 @@ export const TRANSLATIONS: Record<Language, any> = {
     totalPlayers: "合計プレイヤー数",
     humanPlayers: "人間のプレイヤー",
     startGame: "ゲーム開始",
+    soundOn: "音あり",
+    soundOff: "消音",
     characters: {
       panda: { name: "パンパン", desc: "笹が大好きなのんびりパンダ。", ability: "ラッキーダイス", abilityDesc: "サイコロの目が気に入らなければ振り直せる！" },
       rabbit: { name: "ブンブン", desc: "イカしたスニーカーの元気なウサギ。", ability: "ターボシューズ", abilityDesc: "サイコロの出目に+3歩！" },
