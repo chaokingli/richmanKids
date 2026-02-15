@@ -9,9 +9,9 @@ export enum TileType {
 
 export enum PlayerId {
   P1 = 'p1',
-  P2 = 'p2', // AI
-  P3 = 'p3', // Optional AI
-  P4 = 'p4'  // Optional AI
+  P2 = 'p2', 
+  P3 = 'p3', 
+  P4 = 'p4'  
 }
 
 export type Language = 'de' | 'en' | 'zh' | 'ja';
@@ -64,10 +64,11 @@ export interface LogEntry {
 }
 
 export enum GamePhase {
+  SETUP = 'SETUP',
   CHARACTER_SELECTION = 'CHARACTER_SELECTION',
   WAITING_FOR_ROLL = 'WAITING_FOR_ROLL',
   ROLLING = 'ROLLING',
-  ROLL_RESULT = 'ROLL_RESULT', // New phase to decide on abilities (Panda/Rabbit)
+  ROLL_RESULT = 'ROLL_RESULT',
   MOVING = 'MOVING',
   TILE_ACTION = 'TILE_ACTION', 
   EVENT_PROCESSING = 'EVENT_PROCESSING',

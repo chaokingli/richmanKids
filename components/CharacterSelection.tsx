@@ -2,41 +2,39 @@ import React from 'react';
 import { CHARACTERS } from '../constants';
 import { Character, Language } from '../types';
 import { TRANSLATIONS } from '../translations';
-import { Globe } from 'lucide-react';
 
 interface CharacterSelectionProps {
   onSelect: (character: Character) => void;
   language: Language;
-  setLanguage: (lang: Language) => void;
+  playerIndex: number;
+  totalHumans: number;
+  pickedIds: string[];
 }
 
-const CharacterSelection: React.FC<CharacterSelectionProps> = ({ onSelect, language, setLanguage }) => {
+const CharacterSelection: React.FC<CharacterSelectionProps> = ({ onSelect, language, playerIndex, totalHumans, pickedIds }) => {
   const t = TRANSLATIONS[language];
 
   return (
     <div className="fixed inset-0 z-50 bg-sky-100 flex flex-col items-center justify-center p-4 overflow-y-auto">
-      {/* Language Switcher */}
-      <div className="absolute top-4 right-4 flex gap-2">
-        <button onClick={() => setLanguage('de')} className={`px-3 py-1 rounded-full font-bold ${language === 'de' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700'}`}>DE</button>
-        <button onClick={() => setLanguage('en')} className={`px-3 py-1 rounded-full font-bold ${language === 'en' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700'}`}>EN</button>
-        <button onClick={() => setLanguage('zh')} className={`px-3 py-1 rounded-full font-bold ${language === 'zh' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700'}`}>中文</button>
-        <button onClick={() => setLanguage('ja')} className={`px-3 py-1 rounded-full font-bold ${language === 'ja' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700'}`}>JP</button>
-      </div>
-
       <h1 className="text-4xl font-black text-indigo-600 mb-2 drop-shadow-md text-center">{t.appTitle}</h1>
-      <h2 className="text-2xl font-bold text-gray-700 mb-2">{t.chooseHero}</h2>
-      <p className="text-gray-600 mb-8 font-bold text-center">{t.pickHero}</p>
+      <h2 className="text-2xl font-bold text-gray-700 mb-2">
+        {t.you} {playerIndex + 1}: {t.chooseHero}
+      </h2>
+      <p className="text-gray-600 mb-8 font-bold text-center">
+        {pickedIds.length > 0 ? `${pickedIds.length} characters already chosen.` : t.pickHero}
+      </p>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full max-w-5xl">
         {CHARACTERS.map((char) => {
-           // Get Translated info
+           const isPicked = pickedIds.includes(char.id);
            const trChar = t.characters[char.id];
            
            return (
             <button
               key={char.id}
+              disabled={isPicked}
               onClick={() => onSelect(char)}
-              className="group relative bg-white rounded-3xl p-6 pop-shadow-lg border-4 border-black hover:scale-105 transition-all flex flex-col items-center text-center overflow-hidden"
+              className={`group relative bg-white rounded-3xl p-6 border-4 border-black transition-all flex flex-col items-center text-center overflow-hidden ${isPicked ? 'opacity-40 grayscale cursor-not-allowed' : 'pop-shadow-lg hover:scale-105'}`}
             >
               {/* Background Accent */}
               <div className={`absolute top-0 left-0 w-full h-24 opacity-20 ${char.color.split(' ')[0]}`}></div>
@@ -64,9 +62,11 @@ const CharacterSelection: React.FC<CharacterSelectionProps> = ({ onSelect, langu
                 )}
               </div>
               
-              <div className="mt-4 px-6 py-2 bg-green-400 text-white font-bold rounded-full pop-shadow group-hover:bg-green-500 transition-colors z-10">
-                {t.select}
-              </div>
+              {!isPicked && (
+                <div className="mt-4 px-6 py-2 bg-green-400 text-white font-bold rounded-full pop-shadow group-hover:bg-green-500 transition-colors z-10">
+                  {t.select}
+                </div>
+              )}
             </button>
            );
         })}
