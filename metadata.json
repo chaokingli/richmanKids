@@ -1,5 +1,7 @@
 {
   "name": "Gemini Richman Kids",
   "description": "A simplified, colorful Monopoly-style board game for children inspired by Richman 4, featuring AI-generated events and commentary.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [
+    "camera"
+  ]
 }

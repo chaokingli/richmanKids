@@ -1,0 +1,17 @@
+
+{
+  "name": "Gemini Richman Kids",
+  "short_name": "Richman",
+  "description": "Simplified Richman game for kids.",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#f0f9ff",
+  "theme_color": "#0ea5e9",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3233/3233483.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
