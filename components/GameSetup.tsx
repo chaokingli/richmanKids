@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Language } from '../types';
 import { TRANSLATIONS } from '../translations';
@@ -106,10 +105,10 @@ const GameSetup: React.FC<GameSetupProps> = ({ language, setLanguage, onConfirm 
 
         <div className="flex w-full mb-6 p-1 bg-gray-100 rounded-2xl border-2 border-black">
           <button onClick={() => setActiveTab('local')} className={`flex-1 py-2 rounded-xl font-black text-xs sm:text-base flex items-center justify-center gap-2 ${activeTab === 'local' ? 'bg-indigo-500 text-white shadow-md' : 'text-gray-500'}`}>
-            <Monitor size={18} /> LOCAL
+            <Monitor size={18} /> {t.local}
           </button>
           <button onClick={() => setActiveTab('remote')} className={`flex-1 py-2 rounded-xl font-black text-xs sm:text-base flex items-center justify-center gap-2 ${activeTab === 'remote' ? 'bg-indigo-500 text-white shadow-md' : 'text-gray-500'}`}>
-            <Wifi size={18} /> MULTI
+            <Wifi size={18} /> {t.multi}
           </button>
         </div>
         
@@ -149,7 +148,7 @@ const GameSetup: React.FC<GameSetupProps> = ({ language, setLanguage, onConfirm 
             {remoteAction === 'host' ? (
               <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-3xl p-6 flex flex-col items-center">
                  <div ref={qrRef} className="bg-white p-2 border-4 border-black rounded-2xl mb-4"></div>
-                 <p className="text-xs font-bold text-gray-500 mb-2">{t.scanQR}</p>
+                 <p className="text-xs font-bold text-gray-500 mb-2">{t.scanToJoin}</p>
                  <span className="text-3xl font-black text-indigo-600 tracking-widest">{hostRoomCode}</span>
               </div>
             ) : (

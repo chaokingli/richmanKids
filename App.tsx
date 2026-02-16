@@ -68,10 +68,6 @@ const App: React.FC = () => {
     if (isSoundEnabled) audioService.playSfx(type);
   };
 
-  /**
-   * Speak logic with synchronization:
-   * Returns a promise that resolves ONLY after voice is loaded (or falls back).
-   */
   const speak = async (text: string): Promise<void> => {
     if (!isSoundEnabled) return Promise.resolve();
     
@@ -85,7 +81,7 @@ const App: React.FC = () => {
             const source = ctx.createBufferSource();
             source.buffer = buffer;
             source.connect(ctx.destination);
-            source.onended = () => resolve(); // Sync point: voice finished
+            source.onended = () => resolve(); 
             source.start();
             return;
           }
@@ -124,7 +120,6 @@ const App: React.FC = () => {
     if (roomData) {
       setRoomConfig(roomData);
       setPhase(GamePhase.WAITING_FOR_ROOM);
-      // Simulate player joining after delay for local testing
       setTimeout(() => {
         setPhase(GamePhase.CHARACTER_SELECTION);
         playSfx('success');
@@ -192,8 +187,7 @@ const App: React.FC = () => {
     setBoard(prev => prev.map(tile => ({ ...tile, name: t.tiles[tile.id] })));
     setPhase(GamePhase.WAITING_FOR_ROLL);
 
-    const startMsg = language === 'zh' ? "游戏开始！祝你好运！" : "Game start! Good luck!";
-    // Perfect Sync: Voice finishes loading/playing then text appears
+    const startMsg = t.gameStarted;
     await speak(startMsg); 
     addLog(startMsg, 'success'); 
   };
@@ -429,7 +423,6 @@ const App: React.FC = () => {
     playSfx('buy');
     
     const comment = await generateCommentary(player.name, "bought " + tile.name, language, price);
-    // Perfect Sync: Voice first
     await speak(comment);
     addLog(`🎙️ ${comment}`, "event");
     
@@ -460,7 +453,7 @@ const App: React.FC = () => {
               description: `${payer.name} ${t.bankrupt} ${owner.name} ${t.win}`,
               type: 'info',
               onConfirm: () => window.location.reload(),
-              confirmText: "Restart"
+              confirmText: t.restart
             });
             setPhase(GamePhase.GAME_OVER);
         } else {
@@ -474,7 +467,6 @@ const App: React.FC = () => {
     addLog(t.modals.chanceTitle, "event");
     
     const event = await generateChanceEvent(language);
-    // Wait for voice before showing modal to avoid desync
     await speak(event.description);
     
     setModalConfig({
@@ -514,7 +506,7 @@ const App: React.FC = () => {
           <div className="w-48 h-48 sm:w-64 sm:h-64 bg-gray-50 border-4 border-black rounded-3xl mb-6 flex items-center justify-center relative overflow-hidden group">
             <QrCode size={200} className="text-gray-900 opacity-80 group-hover:scale-110 transition-transform" />
             <div className="absolute inset-0 flex items-center justify-center bg-white/40 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity">
-               <p className="font-bold text-indigo-600">SCAN TO JOIN</p>
+               <p className="font-bold text-indigo-600">{t.scanToJoin}</p>
             </div>
           </div>
           <div className="bg-indigo-50 px-8 py-4 rounded-2xl border-4 border-indigo-200 mb-8">
@@ -525,7 +517,7 @@ const App: React.FC = () => {
             <Users size={20} />
             <span>1 / {setupConfig.total} {t.playersJoined}</span>
           </div>
-          <p className="mt-8 text-xs text-gray-400 font-bold uppercase animate-pulse italic">(Simulating player discovery...)</p>
+          <p className="mt-8 text-xs text-gray-400 font-bold uppercase animate-pulse italic">{t.simulatingDiscovery}</p>
         </div>
       </div>
     );
@@ -545,19 +537,19 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-sky-100 flex flex-col items-center font-sans overflow-y-auto overflow-x-hidden">
-      <div className="w-full bg-white/80 backdrop-blur-sm border-b-4 border-black/10 py-2 px-4 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar app-header z-50 sticky top-0">
+      <div className="w-full bg-white/80 backdrop-blur-sm border-b-4 border-black/10 py-1 px-4 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar app-header z-50 sticky top-0 h-14 sm:h-20">
         <div className="flex gap-2">
            {players.map((p) => (
-             <div key={p.id} className={`flex items-center gap-1 sm:gap-2 px-2 py-1 rounded-full border-2 border-black/20 transition-all ${p.id === currentPlayer?.id ? 'bg-white ring-4 ring-indigo-400 shadow-md scale-105' : 'bg-gray-100 opacity-80'} flex-shrink-0`}>
-                <span className="text-sm sm:text-lg">{p.avatar}</span>
+             <div key={p.id} className={`flex items-center gap-1 sm:gap-3 px-2 py-1 rounded-full border-2 border-black/20 transition-all ${p.id === currentPlayer?.id ? 'bg-white ring-4 ring-indigo-400 shadow-md scale-105' : 'bg-gray-100 opacity-80'} flex-shrink-0`}>
+                <span className="text-sm sm:text-2xl">{p.avatar}</span>
                 <div className="flex flex-col leading-none">
-                  <span className="text-[10px] sm:text-[12px] font-bold max-w-[70px] truncate">{p.name}</span>
-                  <span className="text-[11px] sm:text-[14px] font-mono text-green-600 font-bold">${p.money}</span>
+                  <span className="text-[9px] sm:text-[14px] font-black max-w-[80px] truncate">{p.name}</span>
+                  <span className="text-[10px] sm:text-[16px] font-mono text-green-600 font-black">${p.money}</span>
                 </div>
                 {p.abilityCharges > -1 && (
                   <div className="flex items-center ml-0.5">
-                    <Zap size={12} className={p.abilityCharges > 0 ? "text-yellow-500 fill-yellow-500" : "text-gray-400"} />
-                    <span className="text-[10px] font-bold text-gray-600">{p.abilityCharges}</span>
+                    <Zap size={14} className={p.abilityCharges > 0 ? "text-yellow-500 fill-yellow-500" : "text-gray-400"} />
+                    <span className="text-[10px] font-black text-gray-600">{p.abilityCharges}</span>
                   </div>
                 )}
              </div>
@@ -566,35 +558,35 @@ const App: React.FC = () => {
         <div className="flex items-center gap-2">
           <button 
             onClick={() => setIsSoundEnabled(!isSoundEnabled)} 
-            className={`p-2 sm:p-3 rounded-full border-2 transition-all ${isSoundEnabled ? 'bg-green-100 text-green-700 border-green-300' : 'bg-red-100 text-red-700 border-red-300'}`}
+            className={`p-1.5 sm:p-3 rounded-full border-2 transition-all ${isSoundEnabled ? 'bg-green-100 text-green-700 border-green-300' : 'bg-red-100 text-red-700 border-red-300'}`}
           >
             {isSoundEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
           </button>
-          <button onClick={() => setLanguage(l => l === 'de' ? 'en' : l === 'en' ? 'zh' : l === 'zh' ? 'ja' : 'de')} className="bg-indigo-50 text-indigo-700 px-4 py-2 rounded-full text-xs sm:text-sm font-black border-2 border-indigo-200">
+          <button onClick={() => setLanguage(l => l === 'de' ? 'en' : l === 'en' ? 'zh' : l === 'zh' ? 'ja' : 'de')} className="bg-indigo-50 text-indigo-700 px-3 sm:px-6 py-2 rounded-full text-xs sm:text-lg font-black border-2 border-indigo-200">
              {language.toUpperCase()}
           </button>
         </div>
       </div>
 
-      <main className="w-full max-w-[min(95vw,85vh)] flex-grow flex flex-col items-center justify-center p-2 sm:p-6 mb-8">
-        <div className="relative w-full board-container bg-white rounded-[2rem] sm:rounded-[4rem] border-4 sm:border-[10px] border-black p-1.5 sm:p-4 pop-shadow-lg overflow-hidden transition-all duration-500 hover:shadow-2xl">
-          <div className="w-full h-full grid grid-cols-6 grid-rows-6 gap-1 sm:gap-3 md:gap-4">
+      <main className="w-full max-w-[min(95vw,82vh)] landscape:max-w-[min(95vw,75vh)] flex-grow flex flex-col items-center justify-center p-1 sm:p-2 mb-2">
+        <div className="relative w-full board-container bg-white rounded-[1.5rem] sm:rounded-[3rem] border-4 sm:border-[12px] border-black p-1 sm:p-2 pop-shadow-lg overflow-hidden transition-all duration-500 hover:shadow-2xl">
+          <div className="w-full h-full grid grid-cols-6 grid-rows-6 gap-1 sm:gap-2 md:gap-3">
              {board.map((tile) => (
                <div key={tile.id} style={getGridStyle(tile.id)} className="w-full h-full">
                  <TileView tile={tile} players={players} />
                </div>
              ))}
              
-             <div className="col-start-2 col-end-6 row-start-2 row-end-6 bg-sky-50 rounded-[1.5rem] sm:rounded-[3rem] border-4 border-dashed border-sky-200 flex flex-col items-center justify-center relative p-3 sm:p-8">
+             <div className="col-start-2 col-end-6 row-start-2 row-end-6 bg-sky-50 rounded-[1rem] sm:rounded-[2rem] border-4 border-dashed border-sky-200 flex flex-col items-center justify-center relative p-1 sm:p-6 landscape:p-1">
                 
-                <div className={`absolute inset-0 z-40 transition-all duration-500 bg-sky-50/95 p-4 sm:p-8 flex flex-col rounded-[1.5rem] sm:rounded-[3rem] ${showLogs ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-                   <div className="flex justify-between items-center mb-4">
-                     <span className="text-lg font-black text-indigo-600 flex items-center gap-2"><ScrollText size={24}/> 日志</span>
-                     <button onClick={() => setShowLogs(false)} className="text-sm font-bold bg-indigo-500 text-white px-5 py-2 rounded-2xl pop-shadow">关闭</button>
+                <div className={`absolute inset-0 z-40 transition-all duration-500 bg-sky-50/95 p-3 sm:p-8 flex flex-col rounded-[1rem] sm:rounded-[2rem] ${showLogs ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                   <div className="flex justify-between items-center mb-2 sm:mb-6">
+                     <span className="text-sm sm:text-2xl font-black text-indigo-600 flex items-center gap-2"><ScrollText size={24}/> {t.logs}</span>
+                     <button onClick={() => setShowLogs(false)} className="text-xs sm:text-base font-black bg-indigo-500 text-white px-4 py-1.5 rounded-xl pop-shadow">{t.close}</button>
                    </div>
-                   <div className="flex-grow overflow-y-auto pr-2 no-scrollbar" ref={scrollRef}>
+                   <div className="flex-grow overflow-y-auto pr-1 no-scrollbar" ref={scrollRef}>
                       {logs.map((log) => (
-                        <div key={log.id} className={`text-xs sm:text-base p-3 mb-3 rounded-2xl border-l-8 transition-all animate-in slide-in-from-right-4 ${log.type === 'danger' ? 'bg-red-50 border-red-500 text-red-700' : log.type === 'success' ? 'bg-green-50 border-green-500 text-green-700' : log.type === 'event' ? 'bg-purple-50 border-purple-500 text-purple-700 font-bold italic' : 'bg-white border-gray-300 text-gray-600 shadow-sm'}`}>
+                        <div key={log.id} className={`text-[9px] sm:text-lg p-2 sm:p-4 mb-2 sm:mb-4 rounded-xl border-l-8 transition-all animate-in slide-in-from-right-4 ${log.type === 'danger' ? 'bg-red-50 border-red-500 text-red-700' : log.type === 'success' ? 'bg-green-50 border-green-500 text-green-700' : log.type === 'event' ? 'bg-purple-50 border-purple-500 text-purple-700 font-bold italic' : 'bg-white border-gray-300 text-gray-600 shadow-sm'}`}>
                           {log.text}
                         </div>
                       ))}
@@ -603,28 +595,28 @@ const App: React.FC = () => {
 
                 {!showLogs && (
                   <div className="flex flex-col items-center w-full h-full">
-                    <div onClick={() => setShowLogs(true)} className="w-full text-center bg-white/60 hover:bg-white/90 cursor-pointer rounded-2xl p-3 mb-auto border-2 border-black/5 overflow-hidden transition-all shadow-sm">
-                       <p className="text-xs sm:text-lg text-gray-500 truncate font-bold">{logs.length > 0 ? logs[logs.length-1].text : '等待开始...'}</p>
+                    <div onClick={() => setShowLogs(true)} className="w-full text-center bg-white/60 hover:bg-white/90 cursor-pointer rounded-xl p-1 sm:p-4 mb-auto border-2 border-black/5 overflow-hidden transition-all shadow-sm landscape:py-0.5">
+                       <p className="text-[10px] sm:text-xl text-gray-500 truncate font-black">{logs.length > 0 ? logs[logs.length-1].text : t.waiting}</p>
                     </div>
 
-                    <div className="mt-auto mb-auto flex flex-col items-center gap-4 sm:gap-10 w-full">
-                      <div className={`text-2xl sm:text-5xl font-black ${currentPlayer?.color.replace('bg-', 'text-')} leading-tight text-center truncate w-full drop-shadow-md`}>
+                    <div className="mt-auto mb-auto flex flex-col items-center gap-1 sm:gap-8 w-full landscape:gap-1">
+                      <div className={`text-xl sm:text-6xl font-black ${currentPlayer?.color.replace('bg-', 'text-')} leading-tight text-center truncate w-full drop-shadow-md landscape:text-lg`}>
                         {currentPlayer?.name}
                       </div>
                       
-                      <div className="flex items-center justify-center gap-6 sm:gap-16">
+                      <div className="flex items-center justify-center gap-3 sm:gap-16 landscape:gap-4">
                          {phase === GamePhase.ROLL_RESULT && !currentPlayer.isAi && currentCharacter?.abilityType === 'REROLL' && currentPlayer.abilityCharges > 0 && (
-                            <button onClick={() => useAbility('REROLL')} className="flex flex-col items-center group">
-                               <div className="w-14 h-14 sm:w-24 sm:h-24 bg-blue-500 rounded-full flex items-center justify-center text-white border-4 border-black pop-shadow active:scale-95 transition-all group-hover:bg-blue-600">
-                                  <Repeat size={28} className="sm:w-12 sm:h-12" />
+                            <button onClick={() => useAbility('REROLL')} className="flex flex-col items-center group landscape:scale-75">
+                               <div className="w-10 h-10 sm:w-28 sm:h-28 bg-blue-500 rounded-full flex items-center justify-center text-white border-2 sm:border-8 border-black pop-shadow active:scale-95 transition-all group-hover:bg-blue-600">
+                                  <Repeat size={24} className="sm:w-16 sm:h-16" />
                                </div>
-                               <span className="text-[10px] sm:text-sm font-black text-gray-500 mt-2 uppercase tracking-tighter">{t.reroll}</span>
+                               <span className="text-[8px] sm:text-lg font-black text-gray-500 mt-1 uppercase tracking-tighter">{t.reroll}</span>
                             </button>
                          )}
                          
-                         <div className="scale-100 sm:scale-150">
+                         <div className="scale-75 sm:scale-125 landscape:scale-[0.6]">
                             {phase === GamePhase.ROLL_RESULT ? (
-                              <div className="w-24 h-24 sm:w-32 sm:h-32 bg-white rounded-[2rem] border-[6px] border-black flex items-center justify-center text-5xl sm:text-7xl font-black text-indigo-600 shadow-inner pop-shadow">
+                              <div className="w-16 h-16 sm:w-40 sm:h-40 bg-white rounded-[1rem] sm:rounded-[3rem] border-4 sm:border-[10px] border-black flex items-center justify-center text-3xl sm:text-8xl font-black text-indigo-600 shadow-inner pop-shadow">
                                 {diceValue}
                               </div>
                             ) : (
@@ -633,18 +625,18 @@ const App: React.FC = () => {
                          </div>
 
                          {phase === GamePhase.ROLL_RESULT && !currentPlayer.isAi && currentCharacter?.abilityType === 'EXTRA_STEPS' && currentPlayer.abilityCharges > 0 && (
-                            <button onClick={() => useAbility('EXTRA_STEPS')} className="flex flex-col items-center group">
-                               <div className="w-14 h-14 sm:w-24 sm:h-24 bg-pink-500 rounded-full flex items-center justify-center text-white border-4 border-black pop-shadow active:scale-95 transition-all group-hover:bg-pink-600">
-                                  <FastForward size={28} className="sm:w-12 sm:h-12" />
+                            <button onClick={() => useAbility('EXTRA_STEPS')} className="flex flex-col items-center group landscape:scale-75">
+                               <div className="w-10 h-10 sm:w-28 sm:h-28 bg-pink-500 rounded-full flex items-center justify-center text-white border-2 sm:border-8 border-black pop-shadow active:scale-95 transition-all group-hover:bg-pink-600">
+                                  <FastForward size={24} className="sm:w-16 sm:h-16" />
                                </div>
-                               <span className="text-[10px] sm:text-sm font-black text-gray-500 mt-2 uppercase tracking-tighter">{t.extraSteps}</span>
+                               <span className="text-[8px] sm:text-lg font-black text-gray-500 mt-1 uppercase tracking-tighter">{t.extraSteps}</span>
                             </button>
                          )}
                       </div>
 
                       {phase === GamePhase.ROLL_RESULT && !currentPlayer.isAi && (
-                         <button onClick={confirmMove} className="px-10 py-4 sm:px-20 sm:py-6 bg-green-400 text-white font-black rounded-3xl border-b-8 sm:border-b-[12px] border-green-600 active:border-b-0 active:translate-y-2 transition-all flex items-center gap-4 text-xl sm:text-4xl pop-shadow-lg group">
-                           <Play size={24} fill="currentColor" className="sm:w-10 sm:h-10 group-hover:scale-125 transition-transform" /> {t.move}
+                         <button onClick={confirmMove} className="px-6 py-2 sm:px-24 sm:py-8 bg-green-400 text-white font-black rounded-xl sm:rounded-[2.5rem] border-b-4 sm:border-b-[16px] border-green-600 active:border-b-0 active:translate-y-2 transition-all flex items-center gap-2 sm:gap-6 text-sm sm:text-5xl pop-shadow-lg group landscape:py-2 landscape:text-lg landscape:rounded-lg">
+                           <Play size={20} fill="currentColor" className="sm:w-12 sm:h-12 group-hover:scale-125 transition-transform landscape:w-5 landscape:h-5" /> {t.move}
                          </button>
                       )}
                     </div>

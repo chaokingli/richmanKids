@@ -21,7 +21,7 @@ const CharacterSelection: React.FC<CharacterSelectionProps> = ({ onSelect, langu
         {t.you} {playerIndex + 1}: {t.chooseHero}
       </h2>
       <p className="text-gray-600 mb-8 font-bold text-center">
-        {pickedIds.length > 0 ? `${pickedIds.length} characters already chosen.` : t.pickHero}
+        {pickedIds.length > 0 ? `${pickedIds.length} ${t.chosenAlready}` : t.pickHero}
       </p>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full max-w-5xl">
