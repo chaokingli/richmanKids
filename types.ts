@@ -4,7 +4,7 @@ export enum TileType {
   CHANCE = 'CHANCE',
   JAIL = 'JAIL',
   PARK = 'PARK',
-  BANK = 'BANK' // Gives bonus
+  BANK = 'BANK'
 }
 
 export enum PlayerId {
@@ -27,33 +27,32 @@ export interface Character {
   abilityName: string;
   abilityDescription: string;
   abilityType: AbilityType;
-  maxCharges: number; // -1 for passive/infinite
+  maxCharges: number;
 }
 
 export interface Tile {
   id: number;
   type: TileType;
   name: string;
-  price?: number;     // For properties
-  rent?: number;      // For properties
+  price?: number;
+  rent?: number;
   owner?: PlayerId | null;
-  level?: number;     // 0 = land, 1-3 = houses
-  color: string;      // Visual grouping
+  level?: number;
+  color: string;
   icon?: string;
 }
 
 export interface Player {
   id: PlayerId;
   name: string;
-  characterId: string; // Link to Character
+  characterId: string;
   avatar: string;
   color: string;
   money: number;
   position: number;
   isAi: boolean;
   isJailed: boolean;
-  properties: number[]; // IDs of owned tiles
-  facing?: 'left' | 'right';
+  properties: number[];
   abilityCharges: number;
 }
 
@@ -66,6 +65,7 @@ export interface LogEntry {
 export enum GamePhase {
   SETUP = 'SETUP',
   CHARACTER_SELECTION = 'CHARACTER_SELECTION',
+  WAITING_FOR_ROOM = 'WAITING_FOR_ROOM', // New state for multiplayer lobby
   WAITING_FOR_ROLL = 'WAITING_FOR_ROLL',
   ROLLING = 'ROLLING',
   ROLL_RESULT = 'ROLL_RESULT',
@@ -73,4 +73,10 @@ export enum GamePhase {
   TILE_ACTION = 'TILE_ACTION', 
   EVENT_PROCESSING = 'EVENT_PROCESSING',
   GAME_OVER = 'GAME_OVER'
+}
+
+export interface RoomConfig {
+  code: string;
+  password?: string;
+  isHost: boolean;
 }
