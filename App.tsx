@@ -12,7 +12,13 @@ import { audioService } from './services/audioService';
 import { Zap, Repeat, FastForward, Play, Globe, ScrollText, Volume2, VolumeX, Users, QrCode } from 'lucide-react';
 
 const App: React.FC = () => {
-  const [language, setLanguage] = useState<Language>('zh');
+  const [language, setLanguage] = useState<Language>(() => {
+    const navLang = navigator.language.toLowerCase();
+    if (navLang.startsWith('zh')) return 'zh';
+    if (navLang.startsWith('ja')) return 'ja';
+    if (navLang.startsWith('de')) return 'de';
+    return 'en';
+  });
   const [isSoundEnabled, setIsSoundEnabled] = useState(true);
   const [board, setBoard] = useState<Tile[]>(INITIAL_BOARD);
   const [players, setPlayers] = useState<Player[]>([]); 
@@ -540,16 +546,16 @@ const App: React.FC = () => {
       <div className="w-full bg-white/80 backdrop-blur-sm border-b-4 border-black/10 py-1 px-4 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar app-header z-50 sticky top-0 h-14 sm:h-20">
         <div className="flex gap-2">
            {players.map((p) => (
-             <div key={p.id} className={`flex items-center gap-1 sm:gap-3 px-2 py-1 rounded-full border-2 border-black/20 transition-all ${p.id === currentPlayer?.id ? 'bg-white ring-4 ring-indigo-400 shadow-md scale-105' : 'bg-gray-100 opacity-80'} flex-shrink-0`}>
+             <div key={p.id} className={`flex items-center gap-1 sm:gap-3 px-2 sm:px-4 py-1 rounded-full border-2 border-black/20 transition-all ${p.id === currentPlayer?.id ? 'bg-white ring-4 ring-indigo-400 shadow-md scale-105' : 'bg-gray-100 opacity-80'} flex-shrink-0`}>
                 <span className="text-sm sm:text-2xl">{p.avatar}</span>
                 <div className="flex flex-col leading-none">
-                  <span className="text-[9px] sm:text-[14px] font-black max-w-[80px] truncate">{p.name}</span>
+                  <span className="text-[9px] sm:text-[14px] font-black max-w-[100px] sm:max-w-[150px] truncate">{p.name}</span>
                   <span className="text-[10px] sm:text-[16px] font-mono text-green-600 font-black">${p.money}</span>
                 </div>
                 {p.abilityCharges > -1 && (
-                  <div className="flex items-center ml-0.5">
+                  <div className="flex items-center ml-0.5 sm:ml-2">
                     <Zap size={14} className={p.abilityCharges > 0 ? "text-yellow-500 fill-yellow-500" : "text-gray-400"} />
-                    <span className="text-[10px] font-black text-gray-600">{p.abilityCharges}</span>
+                    <span className="text-[10px] sm:text-sm font-black text-gray-600">{p.abilityCharges}</span>
                   </div>
                 )}
              </div>
@@ -562,7 +568,15 @@ const App: React.FC = () => {
           >
             {isSoundEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
           </button>
-          <button onClick={() => setLanguage(l => l === 'de' ? 'en' : l === 'en' ? 'zh' : l === 'zh' ? 'ja' : 'de')} className="bg-indigo-50 text-indigo-700 px-3 sm:px-6 py-2 rounded-full text-xs sm:text-lg font-black border-2 border-indigo-200">
+          <button 
+            onClick={() => setLanguage(l => {
+              const order: Language[] = ['zh', 'en', 'ja', 'de'];
+              const idx = order.indexOf(l);
+              return order[(idx + 1) % order.length];
+            })} 
+            className="bg-indigo-50 text-indigo-700 px-3 sm:px-6 py-2 rounded-full text-xs sm:text-lg font-black border-2 border-indigo-200 flex items-center gap-2"
+          >
+             <Globe size={18} />
              {language.toUpperCase()}
           </button>
         </div>
@@ -586,7 +600,7 @@ const App: React.FC = () => {
                    </div>
                    <div className="flex-grow overflow-y-auto pr-1 no-scrollbar" ref={scrollRef}>
                       {logs.map((log) => (
-                        <div key={log.id} className={`text-[9px] sm:text-lg p-2 sm:p-4 mb-2 sm:mb-4 rounded-xl border-l-8 transition-all animate-in slide-in-from-right-4 ${log.type === 'danger' ? 'bg-red-50 border-red-500 text-red-700' : log.type === 'success' ? 'bg-green-50 border-green-500 text-green-700' : log.type === 'event' ? 'bg-purple-50 border-purple-500 text-purple-700 font-bold italic' : 'bg-white border-gray-300 text-gray-600 shadow-sm'}`}>
+                        <div key={log.id} className={`text-[9px] sm:text-base p-2 sm:p-4 mb-2 sm:mb-4 rounded-xl border-l-8 transition-all animate-in slide-in-from-right-4 break-words ${log.type === 'danger' ? 'bg-red-50 border-red-500 text-red-700' : log.type === 'success' ? 'bg-green-50 border-green-500 text-green-700' : log.type === 'event' ? 'bg-purple-50 border-purple-500 text-purple-700 font-bold italic' : 'bg-white border-gray-300 text-gray-600 shadow-sm'}`}>
                           {log.text}
                         </div>
                       ))}
@@ -596,27 +610,27 @@ const App: React.FC = () => {
                 {!showLogs && (
                   <div className="flex flex-col items-center w-full h-full">
                     <div onClick={() => setShowLogs(true)} className="w-full text-center bg-white/60 hover:bg-white/90 cursor-pointer rounded-xl p-1 sm:p-4 mb-auto border-2 border-black/5 overflow-hidden transition-all shadow-sm landscape:py-0.5">
-                       <p className="text-[10px] sm:text-xl text-gray-500 truncate font-black">{logs.length > 0 ? logs[logs.length-1].text : t.waiting}</p>
+                       <p className="text-[10px] sm:text-lg text-gray-500 truncate font-black">{logs.length > 0 ? logs[logs.length-1].text : t.waiting}</p>
                     </div>
 
-                    <div className="mt-auto mb-auto flex flex-col items-center gap-1 sm:gap-8 w-full landscape:gap-1">
-                      <div className={`text-xl sm:text-6xl font-black ${currentPlayer?.color.replace('bg-', 'text-')} leading-tight text-center truncate w-full drop-shadow-md landscape:text-lg`}>
+                    <div className="mt-auto mb-auto flex flex-col items-center gap-1 sm:gap-6 w-full landscape:gap-1">
+                      <div className={`text-xl sm:text-5xl font-black ${currentPlayer?.color.replace('bg-', 'text-')} leading-tight text-center truncate w-full drop-shadow-md landscape:text-lg`}>
                         {currentPlayer?.name}
                       </div>
                       
-                      <div className="flex items-center justify-center gap-3 sm:gap-16 landscape:gap-4">
+                      <div className="flex items-center justify-center gap-3 sm:gap-10 landscape:gap-4">
                          {phase === GamePhase.ROLL_RESULT && !currentPlayer.isAi && currentCharacter?.abilityType === 'REROLL' && currentPlayer.abilityCharges > 0 && (
                             <button onClick={() => useAbility('REROLL')} className="flex flex-col items-center group landscape:scale-75">
-                               <div className="w-10 h-10 sm:w-28 sm:h-28 bg-blue-500 rounded-full flex items-center justify-center text-white border-2 sm:border-8 border-black pop-shadow active:scale-95 transition-all group-hover:bg-blue-600">
-                                  <Repeat size={24} className="sm:w-16 sm:h-16" />
+                               <div className="w-10 h-10 sm:w-20 sm:h-20 bg-blue-500 rounded-full flex items-center justify-center text-white border-2 sm:border-4 border-black pop-shadow active:scale-95 transition-all group-hover:bg-blue-600">
+                                  <Repeat size={24} className="sm:w-10 sm:h-10" />
                                </div>
-                               <span className="text-[8px] sm:text-lg font-black text-gray-500 mt-1 uppercase tracking-tighter">{t.reroll}</span>
+                               <span className="text-[8px] sm:text-xs font-black text-gray-500 mt-1 uppercase tracking-tighter">{t.reroll}</span>
                             </button>
                          )}
                          
-                         <div className="scale-75 sm:scale-125 landscape:scale-[0.6]">
+                         <div className="scale-75 sm:scale-110 landscape:scale-[0.6]">
                             {phase === GamePhase.ROLL_RESULT ? (
-                              <div className="w-16 h-16 sm:w-40 sm:h-40 bg-white rounded-[1rem] sm:rounded-[3rem] border-4 sm:border-[10px] border-black flex items-center justify-center text-3xl sm:text-8xl font-black text-indigo-600 shadow-inner pop-shadow">
+                              <div className="w-16 h-16 sm:w-32 sm:h-32 bg-white rounded-[1rem] sm:rounded-[2rem] border-4 sm:border-[8px] border-black flex items-center justify-center text-3xl sm:text-6xl font-black text-indigo-600 shadow-inner pop-shadow">
                                 {diceValue}
                               </div>
                             ) : (
@@ -626,17 +640,17 @@ const App: React.FC = () => {
 
                          {phase === GamePhase.ROLL_RESULT && !currentPlayer.isAi && currentCharacter?.abilityType === 'EXTRA_STEPS' && currentPlayer.abilityCharges > 0 && (
                             <button onClick={() => useAbility('EXTRA_STEPS')} className="flex flex-col items-center group landscape:scale-75">
-                               <div className="w-10 h-10 sm:w-28 sm:h-28 bg-pink-500 rounded-full flex items-center justify-center text-white border-2 sm:border-8 border-black pop-shadow active:scale-95 transition-all group-hover:bg-pink-600">
-                                  <FastForward size={24} className="sm:w-16 sm:h-16" />
+                               <div className="w-10 h-10 sm:w-20 sm:h-20 bg-pink-500 rounded-full flex items-center justify-center text-white border-2 sm:border-4 border-black pop-shadow active:scale-95 transition-all group-hover:bg-pink-600">
+                                  <FastForward size={24} className="sm:w-10 sm:h-10" />
                                </div>
-                               <span className="text-[8px] sm:text-lg font-black text-gray-500 mt-1 uppercase tracking-tighter">{t.extraSteps}</span>
+                               <span className="text-[8px] sm:text-xs font-black text-gray-500 mt-1 uppercase tracking-tighter">{t.extraSteps}</span>
                             </button>
                          )}
                       </div>
 
                       {phase === GamePhase.ROLL_RESULT && !currentPlayer.isAi && (
-                         <button onClick={confirmMove} className="px-6 py-2 sm:px-24 sm:py-8 bg-green-400 text-white font-black rounded-xl sm:rounded-[2.5rem] border-b-4 sm:border-b-[16px] border-green-600 active:border-b-0 active:translate-y-2 transition-all flex items-center gap-2 sm:gap-6 text-sm sm:text-5xl pop-shadow-lg group landscape:py-2 landscape:text-lg landscape:rounded-lg">
-                           <Play size={20} fill="currentColor" className="sm:w-12 sm:h-12 group-hover:scale-125 transition-transform landscape:w-5 landscape:h-5" /> {t.move}
+                         <button onClick={confirmMove} className="px-6 py-2 sm:px-16 sm:py-4 bg-green-400 text-white font-black rounded-xl sm:rounded-[2rem] border-b-4 sm:border-b-[12px] border-green-600 active:border-b-0 active:translate-y-2 transition-all flex items-center gap-2 sm:gap-4 text-sm sm:text-3xl pop-shadow-lg group landscape:py-2 landscape:text-lg landscape:rounded-lg">
+                           <Play size={20} fill="currentColor" className="sm:w-8 sm:h-8 group-hover:scale-125 transition-transform landscape:w-5 landscape:h-5" /> {t.move}
                          </button>
                       )}
                     </div>

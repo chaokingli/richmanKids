@@ -21,12 +21,19 @@ export const generateChanceEvent = async (lang: Language): Promise<GeneratedEven
   }
 
   const promptSuffix = TRANSLATIONS[lang].promptLang;
+  const prompts = {
+    zh: "生成一个有趣的、适合儿童的、类似大富翁游戏的随机事件。它应该给玩家钱或让玩家赔钱。保持简短。",
+    en: "Generate a fun, kid-friendly random event for a Monopoly-like board game. It should either give the player money or make them lose money. Keep it short.",
+    de: "Generiere ein lustiges, kinderfreundliches Zufallsereignis für ein Monopoly-ähnliches Brettspiel. Es sollte dem Spieler entweder Geld geben oder ihn Geld verlieren lassen. Halte es kurz.",
+    ja: "モノポリーのようなボードゲームのために、楽しくて子供向けのランダムなイベントを生成してください。プレイヤーにお金を与えるか、お金を失わせるかのどちらかにしてください。短くしてください。"
+  };
 
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: `Generate a fun, kid-friendly random event for a Monopoly-like board game. It should either give the player money or make them lose money. Keep it short. ${promptSuffix}`,
+      contents: prompts[lang] || prompts.en,
       config: {
+        systemInstruction: `You are a creative game designer. ${promptSuffix} Always respond in the requested language.`,
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -46,9 +53,10 @@ export const generateChanceEvent = async (lang: Language): Promise<GeneratedEven
     throw new Error("No response text");
   } catch (error) {
     console.error("Gemini API Error (Event):", error);
+    const t = TRANSLATIONS[lang];
     return {
-      title: "Lucky!",
-      description: "...",
+      title: t.modals.chanceTitle,
+      description: lang === 'zh' ? "你发现了一枚金币！" : lang === 'ja' ? "コインを見つけた！" : lang === 'de' ? "Du hast eine Münze gefunden!" : "You found a coin!",
       moneyChange: 100
     };
   }
@@ -58,18 +66,23 @@ export const generateCommentary = async (playerName: string, action: string, lan
   if (!process.env.API_KEY) return `Wow! ${playerName} ${action}!`;
 
   const promptSuffix = TRANSLATIONS[lang].promptLang;
+  const prompts = {
+    zh: `写一个非常简短、有趣、只有一句话的反应，来自一个热情的游戏节目主持人，关于 ${playerName} 刚刚 ${action} ${amount ? `(${amount})` : ''}。使用表情符号。`,
+    en: `Write a very short, funny, 1-sentence reaction from an enthusiastic game show host about ${playerName} who just ${action} ${amount ? `(${amount})` : ''}. Use emojis.`,
+    de: `Schreibe eine sehr kurze, lustige, einseitige Reaktion von einem enthusiastischen Spielshow-Moderator über ${playerName}, der gerade ${action} ${amount ? `(${amount})` : ''} hat. Benutze Emojis.`,
+    ja: `熱狂的なゲーム番組の司会者による、${playerName} が ${action} ${amount ? `(${amount})` : ''} したことに対する、非常に短く面白い1文のリアクションを書いてください。絵文字を使用してください。`
+  };
 
   try {
-    const prompt = `Write a very short, funny, 1-sentence reaction from an enthusiastic game show host about ${playerName} who just ${action} ${amount ? `(${amount})` : ''}. Use emojis. ${promptSuffix}`;
-    
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: prompt,
+      contents: prompts[lang] || prompts.en,
       config: {
-        maxOutputTokens: 60
+        systemInstruction: `You are an enthusiastic game show host. ${promptSuffix} Always respond in the requested language. Keep it under 20 words.`,
+        maxOutputTokens: 150
       }
     });
-    return response.text || "Amazing!";
+    return response.text?.trim() || "Amazing!";
   } catch (e) {
     console.error("Gemini API Error (Commentary):", e);
     return "Wow!";
